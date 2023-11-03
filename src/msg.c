@@ -50,7 +50,7 @@ int msg_send_message(int socket, struct StopAndWaitMessage* msg, struct sockaddr
     ret = udp_tx(buf, MSG_HEADER_SIZE + msg->header.data_size, socket, address, sizeof(*address));
     return ret;
 }
-int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct sockaddr* src_addr, const socklen_t* addr_size){
+int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct sockaddr* src_addr, socklen_t* const addr_size){
     /*
     * Receives a message over UDP from the address in_address with the file descriptor sockfd.
     * Supports both IPv4 and IPv6. The received message is stored in recv. The user must allocate memory for recv.
