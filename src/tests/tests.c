@@ -1,4 +1,4 @@
-#include "../message.h"
+#include "../msg.h"
 
 int main(void)
 {
@@ -25,19 +25,19 @@ int main(void)
     {
         printf("Big-endian\n");
     }
-    struct StopAndWaitHeader header1 = create_header(0, 0, 6, 0);
-    struct StopAndWaitMessage message4 = create_message(header1, data1);
+    struct StopAndWaitHeader header1 = msg_create_header(0, 0, 6, 0);
+    struct StopAndWaitMessage message4 = msg_create_message(header1, data1);
 
-    uint32_t remainder1 = calculate_32crc(crc, data1, 6, true);
-    uint32_t remainder2 = calculate_32crc(crc, data2, 6, true);
-    uint32_t remainder3 = calculate_32crc(crc, data3_char, 8, true);
-    uint32_t remainder4 = calculate_32crc_little_edian(crc, message4);
+    uint32_t remainder1 = utils_calculate_32crc(crc, data1, 6);
+    uint32_t remainder2 = utils_calculate_32crc(crc, data2, 6);
+    uint32_t remainder3 = utils_calculate_32crc(crc, data3_char, 8);
+    uint32_t remainder4 = msg_calculate_32crc_little_edian(crc, message4);
     printf("Remainder1: %d\n", remainder1);
     printf("Remainder2: %u\n", remainder2);
     printf("Remainder3: %d\n", remainder3);
     printf("Remainder4: %u\n", remainder4);
     message4.header.crc = remainder4;
-    remainder4 = calculate_32crc_little_edian(crc, message4);
+    remainder4 = msg_calculate_32crc_little_edian(crc, message4);
     printf("Remainder4 after crc inclusion: %u\n", remainder4);
     return 0;
 }
