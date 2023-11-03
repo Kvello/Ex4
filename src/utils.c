@@ -117,3 +117,13 @@ long utils_time_diff(struct timeval* const start, struct timeval* const end)
 
     return seconds*1e6+microseconds;
 }
+
+bool utils_rand_bool(double prob){
+    /*
+    * Returns true with the given probability.
+    * @param[in] prob: the probability of returning true
+    * @return true with the given probability
+    */
+    double r = (double)rand()/(double)RAND_MAX;
+    return r < prob;
+}

@@ -14,6 +14,12 @@ typedef struct{
 void* async_receive_message(void* args){
     async_receive_message_args* arg = (async_receive_message_args*)args;
     rec = msg_receive_message(arg->socket,arg->recv,arg->src_addr,arg->addr_len);
+    if(utils_rand_bool(LOST_PROB)){
+        printf("Simulating lost message\n");
+        while(1){
+            //Block
+        }
+    }
     pthread_mutex_lock(&mux1);
     finished = true;
     pthread_mutex_unlock(&mux1);
@@ -39,16 +45,23 @@ int main(int argc,char* argv[]){
     ack_message.header = msg_create_header(0,0,1,utils_calculate_32crc(CRC_DIVISOR,&dummy_data,1));
     out_message.header = msg_create_header(1,0,0,0);
     int read_bytes=0;
+    unsigned long long total_bytes=0;
+    struct timeval send_start, send_end;
+    gettimeofday(&send_start, NULL);
     while((read_bytes=fread(buf,1,MSG_MAX_DATA_SIZE,fp))>0){
-
+        total_bytes += read_bytes;
         int crc = utils_calculate_32crc(CRC_DIVISOR,buf,read_bytes);
         struct StopAndWaitHeader header = msg_create_header(!out_message.header.seq_num,0,read_bytes,crc);
         out_message = msg_create_message(header,buf);
 
         while(ack_message.header.ack == out_message.header.seq_num){
+            if((float)rand()/(float)RAND_MAX<BITFLIP_PROB){
+                printf("Simulating error\n");
+                out_message.data[0] ^= 0b00000001; // Simulate single bit flip error 
+            }
             int ret = msg_send_message(sock,&out_message, (struct sockaddr*)&server_addr);
             if(ret == -1){
-                printf("error in udp_transmitt\n");
+                printf("error in msg_send_message\n");
                 exit(1);
             }
             struct StopAndWaitMessage temp;
@@ -71,8 +84,6 @@ int main(int argc,char* argv[]){
                 pthread_mutex_lock(&mux1);
                 if(finished){
                     pthread_mutex_unlock(&mux1);
-                    //void* status;
-                    //pthread_join(rx_tread,&status);
                     finished = false;
                     timed_out = false;
                     break;
@@ -82,8 +93,8 @@ int main(int argc,char* argv[]){
             }
             pthread_mutex_lock(&mux1);
             if(timed_out){
+                printf("Timed out, resending\n");
                 pthread_cancel(rx_tread);
-                pthread_join(rx_tread,NULL);
                 pthread_mutex_unlock(&mux1);
                 continue;
             }
@@ -98,4 +109,8 @@ int main(int argc,char* argv[]){
         }
 
     }
+    gettimeofday(&send_end, NULL);
+    double time = utils_time_diff(&send_start,&send_end);
+    printf("Sent %llu bytes in %f micro seconds\n",total_bytes,time);
+    printf("That is %.2e bytes per second\n",1e6*((double)total_bytes)/time);
 }

@@ -15,4 +15,5 @@ bool utils_is_little_edian();
 int utils_findMSBPosition(uint8_t *x, int length, bool little_edian);
 uint32_t utils_calculate_32crc(uint64_t crc_divisor, const uint8_t *data, int data_size);
 long utils_time_diff(struct timeval* const start, struct timeval* const end);
+bool utils_rand_bool(double prob);
 #endif
