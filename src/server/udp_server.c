@@ -10,9 +10,10 @@ int main(int argc, char** argv){
     ack.data = &dummy_data;
     ack.header = msg_create_header(0,0,8,0);
     uint32_t crc = utils_calculate_32crc(CRC_DIVISOR,&dummy_data,8);
-    FILE* fp = utils_open_file(argv[1],"a");
+    FILE* fp = utils_open_file(argv[1],'a');
+    socklen_t addr_size = sizeof(client_addr);
     while(true){
-        int ret = msg_receive_message(socket,&recv,(struct sockaddr*)&client_addr,sizeof(client_addr));
+        int ret = msg_receive_message(socket,&recv,(struct sockaddr*)&client_addr,&addr_size);
         if(ret != -1){
             ack.header = msg_create_header(!seq_num,!recv.header.seq_num,8,crc);
             fwrite(recv.data,1,recv.header.data_size,fp);
