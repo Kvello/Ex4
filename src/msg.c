@@ -56,6 +56,7 @@ int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct so
     * Supports both IPv4 and IPv6. The received message is stored in recv. The user must allocate memory for recv.
     * Also the user must set the correct size of the data in recv->header.data_size, reflecting the size of the allocated memory.
     * If more bytes are received than the size of the allocated memory and error(-1) is returned.
+    * The function also checks the crc of the received message, and returns -1 if the crc is incorrect.
     * Returns the number of bytes received, or -1 if an error occured.
     * @param[out] recv: the buffer to store the received message
     * @param[in] sockfd: the file descriptor of the socket to receive the message from, an UDP socket
@@ -79,5 +80,9 @@ int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct so
     }
     memcpy(&(recv->header),&buf,MSG_HEADER_SIZE);
     memcpy(recv->data,&buf[MSG_HEADER_SIZE],recv->header.data_size);
+    if(utils_calculate_32crc(CRC_DIVISOR,recv->data,recv->header.data_size) != 0){
+        printf("crc error\n");
+        return -1;
+    }
 
 }
