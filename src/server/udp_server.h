@@ -6,6 +6,10 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include "../udp.h"
+#include "../msg.h"
+#include "../utils.h"
 #include "../msg.h"
 #include "../utils.h"
 #include "../udp.h"

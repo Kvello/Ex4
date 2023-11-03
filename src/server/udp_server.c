@@ -11,7 +11,7 @@ static void clean_thread(void* args){
 static void* async_receive_message(void* args){
     rx_args* arg = (rx_args*)args;
     int* ret = (int*) malloc(sizeof(int));
-    pthread_cleanup_push(clean_thread,ret);
+    pthread_cleanup_push(clean_thread, ret);
     *ret = msg_receive_message(arg->socket,arg->recv,arg->src_addr,arg->addr_len);
     if(utils_rand_bool(LOST_PROB)){
         printf("Simulating lost message\n");
@@ -22,6 +22,7 @@ static void* async_receive_message(void* args){
     pthread_mutex_lock(&mux1);
     finished = true;
     pthread_mutex_unlock(&mux1);
+    pthread_cleanup_pop(0);
     pthread_exit(ret);
 }
 
