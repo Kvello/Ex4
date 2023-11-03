@@ -12,7 +12,6 @@ SERVER_OBJ := $(patsubst $(SRC_DIR)/server/%.c, $(BUILD_DIR)/%.o, $(SERVER_SRC))
 CLIENT_OBJ := $(patsubst $(SRC_DIR)/client/%.c, $(BUILD_DIR)/%.o, $(CLIENT_SRC))
 COMMON_OBJ := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(COMMON_SRC))
 TEST_OBJ := $(patsubst $(SRC_DIR)/tests/%.c, $(BUILD_DIR)/%.o, $(TEST_SRC))
-
 # Compiler options
 CC := g++
 CFLAGS := -Wall -O2
@@ -55,3 +54,7 @@ debug: $(DEBUG)
 
 .PHONY: all
 all: client server
+
+.PHONY: print
+print:
+	@echo $(COMMON_SRC)
