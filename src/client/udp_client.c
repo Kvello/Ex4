@@ -7,8 +7,9 @@ typedef struct{
     int socket;
     struct StopAndWaitMessage* recv;
     struct sockaddr* src_addr;
-    socklen_t* addr_len
+    socklen_t addr_len;
 }async_receive_message_args;
+
 
 void* async_receive_message(void* args){
     async_receive_message_args* arg = (async_receive_message_args*)args;
@@ -16,10 +17,11 @@ void* async_receive_message(void* args){
     pthread_mutex_lock(&mux1);
     finished = true;
     pthread_mutex_unlock(&mux1);
-    return NULL;
+    pthread_exit(NULL);
 }
 
-int main(int argc,char** argv){
+int main(int argc,char* argv[]){
+    printf("Starting client\n");
     pthread_t rx_tread;
     async_receive_message_args rx_args;
     int sock = udp_get_sock(AF_INET, UDP_CLIENT_PORT, INADDR_ANY);
@@ -27,20 +29,22 @@ int main(int argc,char** argv){
     rx_args.src_addr = (struct sockaddr*)NULL;
     struct sockaddr_in server_addr;
     udp_get_sockaddr(AF_INET,argv[1],UDP_SERVER_PORT,&server_addr);
-    int fp = open_file(argv[2],"r");
+    FILE* fp = utils_open_file(argv[2],"r");
     uint8_t buf[MSG_MAX_DATA_SIZE];
 
     struct StopAndWaitMessage out_message;
     struct StopAndWaitMessage ack_message;
-    ack_message.header = msg_create_header(0,0,0,0);
+    uint8_t dummy_data = 0;
+    ack_message.data = &dummy_data;
+    ack_message.header = msg_create_header(0,0,1,utils_calculate_32crc(CRC_DIVISOR,&dummy_data,1));
     out_message.header = msg_create_header(1,0,0,0);
-
     int read_bytes=0;
-    while((read_bytes=read(fp,buf,MSG_MAX_DATA_SIZE))!=EOF){
+    while((read_bytes=fread(buf,1,MSG_MAX_DATA_SIZE,fp))>0){
+
         int crc = utils_calculate_32crc(CRC_DIVISOR,buf,read_bytes);
         struct StopAndWaitHeader header = msg_create_header(!out_message.header.seq_num,0,read_bytes,crc);
         out_message = msg_create_message(header,buf);
-        
+
         while(ack_message.header.ack == out_message.header.seq_num){
             int ret = msg_send_message(sock,&out_message, (struct sockaddr*)&server_addr);
             if(ret == -1){
@@ -49,34 +53,43 @@ int main(int argc,char** argv){
             }
             struct StopAndWaitMessage temp;
             temp.header = ack_message.header;
-            int temp_data = *ack_message.data;
+            uint8_t temp_data = *ack_message.data;
             temp.data = &temp_data;
             rx_args.addr_len = sizeof(server_addr.sin_addr);
             rx_args.recv = &temp;
             // Start timer
-            struct timeval *p_start, *now;
-            gettimeofday(p_start, NULL);
-            ret = pthread_create(&rx_tread,NULL,async_receive_message,(void*)&rx_args);
+            struct timeval p_start, now;
+            gettimeofday(&p_start, NULL);
+            ret = pthread_create(&rx_tread,NULL,async_receive_message,&rx_args);
             if(ret != 0){
                 printf("error in pthread_create\n");
                 exit(1);
             }
-            gettimeofday(now, NULL);
-            while(utils_time_diff(p_start,now) < TIMEOUT){
+            gettimeofday(&now, NULL);
+            bool timed_out = true;
+            while(utils_time_diff(&p_start,&now) < TIMEOUT){
                 pthread_mutex_lock(&mux1);
                 if(finished){
                     pthread_mutex_unlock(&mux1);
-                    pthread_join(rx_tread,NULL);
+                    //void* status;
+                    //pthread_join(rx_tread,&status);
                     finished = false;
+                    timed_out = false;
                     break;
                 }
                 pthread_mutex_unlock(&mux1);
-                gettimeofday(now, NULL);
+                gettimeofday(&now, NULL);
             }
+            pthread_mutex_lock(&mux1);
+            if(timed_out){
+                pthread_cancel(rx_tread);
+                pthread_join(rx_tread,NULL);
+                pthread_mutex_unlock(&mux1);
+                continue;
+            }
+            pthread_mutex_unlock(&mux1);
             if(rec == -1){
-                printf("error in udp_receive\n");
-            }else if(rec == 0){
-                printf("timeout\n");
+                printf("msg_receive_message detected an error, resending\n");
             }else{
                 // Correctly received ack. Store and continue
                 ack_message.header = temp.header;
