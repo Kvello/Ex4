@@ -8,6 +8,7 @@
 #define MSG_MAX_DATA_SIZE 1024
 #define MSG_MAX_SIZE MSG_HEADER_SIZE + MSG_MAX_DATA_SIZE
 // #define CRC_DIVISOR 0x104C11DB7 // CRC-32 polynomial
+#define ACKSIZE 1
 struct StopAndWaitHeader
 {
     /*
@@ -38,6 +39,13 @@ struct StopAndWaitMessage
     struct StopAndWaitHeader header;
     uint8_t* data;
 };
+typedef struct{
+    int socket;
+    struct StopAndWaitMessage* recv;
+    struct sockaddr* src_addr;
+    socklen_t addr_len;
+} msg_rx_args;
+
 struct StopAndWaitHeader msg_create_header(bool seq_num, bool ack, u_int16_t data_size, u_int32_t crc);
 struct StopAndWaitMessage msg_create_message(struct StopAndWaitHeader header, u_int8_t *data);
 int msg_send_message(int socket, struct StopAndWaitMessage*message, struct sockaddr *address);
