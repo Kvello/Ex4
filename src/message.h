@@ -5,7 +5,8 @@
 #include <math.h>
 #define CRC_DIVISOR 0b100000100110000010001110110110111
 #define NUM_BYTES_CRC_DIVISOR 5
-#define HEADER_SIZE sizeof(struct StopAndWaitHeader)
+#define MESSAGE_HEADER_SIZE sizeof(struct StopAndWaitHeader)
+#define MESSAGE_MAX_DATA_SIZE 1024
 #define NUM_BITS_CRC_DIVISOR 33
 // #define CRC_DIVISOR 0x104C11DB7 // CRC-32 polynomial
 struct StopAndWaitHeader
@@ -42,6 +43,5 @@ struct StopAndWaitHeader create_header(bool seq_num, bool ack, u_int16_t data_si
 struct StopAndWaitMessage create_message(struct StopAndWaitHeader header, u_int8_t *data);
 int findMSBPosition(uint8_t *x, int length, bool little_edian);
 uint32_t calculate_32crc_little_edian(uint64_t crc, struct StopAndWaitMessage message);
-uint32_t calculate_32crc(uint64_t crc_divisor, const uint8_t *data, int data_size)
-
+uint32_t calculate_32crc(uint64_t crc_divisor, const uint8_t *data, int data_size);
 #endif
