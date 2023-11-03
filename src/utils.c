@@ -11,7 +11,7 @@ bool utils_is_little_edian(){
     }
 }
 
-FILE* utils_open_file(char* file_name, char* mode){
+FILE* utils_open_file(char* file_name, char mode){
     FILE *fp;
     if((fp = fopen(file_name,mode))==NULL){
         printf("error in open file");
