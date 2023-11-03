@@ -5,5 +5,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include "../common.h"
+#include "../udp.h"
+#include "../msg.h"
+#include "../utils.h"
 #endif
