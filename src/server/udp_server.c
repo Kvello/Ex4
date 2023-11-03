@@ -9,7 +9,7 @@ static void clean_thread(void* args){
 }
 
 static void* async_receive_message(void* args){
-    rx_args* arg = (rx_args*)args;
+    msg_rx_args* arg = (msg_rx_args*)args;
     int* ret = (int*) malloc(sizeof(int));
     pthread_cleanup_push(clean_thread, ret);
     *ret = msg_receive_message(arg->socket,arg->recv,arg->src_addr,arg->addr_len);
@@ -50,7 +50,8 @@ int main(int argc, char* argv[]){
 
     uint8_t dummy_data = 0;
     ack.data = &dummy_data;
-    ack.header = msg_create_header(1,0,1,utils_calculate_32crc(CRC_DIVISOR,&dummy_data,1));
+    ack.header = msg_create_header(1,0,
+        ACKSIZE,utils_calculate_32crc(CRC_DIVISOR,&dummy_data,ACKSIZE));
     recv.data = (uint8_t*)malloc(MSG_MAX_DATA_SIZE);
     recv.header = msg_create_header(0,0,MSG_MAX_DATA_SIZE,0);
 
@@ -64,7 +65,7 @@ int main(int argc, char* argv[]){
     unsigned long long int recevied_bytes = recv.header.data_size;
     while(true){
         dummy_data = 0;
-        rx_args args = {
+        msg_rx_args args = {
             .socket = socket,
             .recv = &recv,
             .src_addr = (struct sockaddr*)&client_addr,
@@ -73,7 +74,11 @@ int main(int argc, char* argv[]){
         gettimeofday(&rx_start, NULL);
         void* thread_res;
         int ret = 0;
-        pthread_create(&rx_tread,NULL,async_receive_message,(void*)&args);
+        ret = pthread_create(&rx_tread,NULL,async_receive_message,(void*)&args);
+        if (ret != 0){
+            printf("Error creating thread\n");
+            exit(1);
+        }
         gettimeofday(&now, NULL);
         bool timed_out = true;
         // Start timed connection
@@ -122,6 +127,7 @@ int main(int argc, char* argv[]){
         msg_send_message(socket,&ack,(struct sockaddr*)&client_addr);
     }
     fclose(fp);
+    free(recv.data);
     printf("Received %llu bytes of data\n",recevied_bytes);
     return 0;
 }
