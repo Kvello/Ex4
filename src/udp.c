@@ -1,11 +1,10 @@
 #include "udp.h"
 
-int udp_transmitt(char* data, int data_size, int sockfd, const void* out_addr, int addr_len, int protocol_family, int ser_port){
+int udp_transmitt(void* data, int data_size, int sockfd, const void* out_addr, int addr_len, int protocol_family, int ser_port){
     /*
     * Sends the data in data over UDP with the file descriptor sockfd as one message.
     * Supports both IPv4 and IPv6.
     * Returns the number of bytes sent, or -1 if an error occured.
-    * The data is sent as a StopAndWaitMessage, see src/message.h for more information.
     * @param[in] data: the data to be sent
     * @param[in] data_size: the size of the data in bytes
     * @param sockfd[in]: the file descriptor of the socket to send the data to, an UDP socket
@@ -15,47 +14,24 @@ int udp_transmitt(char* data, int data_size, int sockfd, const void* out_addr, i
     * @return the number of bytes sent, or -1 if an error occured
     */
     int ret; 
-    uint32_t crc = calculate_32crc(CRC_DIVISOR,data,data_size);
-    struct StopAndWaitMessage msg = create_message(create_header(false,false,data_size,crc),data);
-    int msg_size = sizeof(msg);
-    ret = sendto(sockfd,&msg,msg_size,0,out_addr,addr_len);
+    ret = sendto(sockfd,data,data_size,0,out_addr,addr_len);
     printf("sent %d bytes\n", ret);
     return ret;
 }
-int udp_receive(struct StopAndWaitMessage* buf, const int socketfd, const void* in_addr, const socklen_t* addr_len){
+int udp_receive(void* buf, int buf_size, const int socketfd, const void* in_addr, const socklen_t* addr_len){
     /*
-    * Receives a message over UDP with the file descriptor sockfd. The address received from is stored in in_addr.
-    * Supports both IPv4 and IPv6. The received message is stored in buf, the data field here need to be big
-    * enough for the message, and should be reflected in the data_size field, otherwise an error will be returned(-1).
-    * The function checks the crc of the DATA
-    * of the message, and compares it to the crc in the header. If they are not equal, the function returns -1.
-    * Otherwise it returns the number of bytes received.
-    * @param[out] buf: the buffer to store the received message in
-    * @param[in] socketfd: the file descriptor of the socket to receive the message from, an UDP socket
-    * @param[in] in_addr: the address of the sender, should be a sockaddr_in or sockaddr_in6
-    * @param[in] addr_len: the length of the address of the sender
+    * Receives a message over UDP from the address in_address with the file descriptor sockfd.
+    * Supports both IPv4 and IPv6. The received message is stored in buf.
+    * Returns the number of bytes received, or -1 if an error occured.
+    * @param[out] buf: the buffer to store the received message
+    * @param[in] buf_size: the size of the buffer in bytes
+    * @param[in] sockfd: the file descriptor of the socket to receive the message from, an UDP socket
+    * @param[in] in_addr: the address of the sender of the message, should be a sockaddr_in or sockaddr_in6
+    * @param[in] addr_len: the length of the address of the sender of the message
     * @return the number of bytes received, or -1 if an error occured
     */
-    char temp_buf[MAX_DATA_BYTES+HEADER_SIZE];
     int ret;
-    ret = recvfrom(socketfd,temp_buf,MAX_DATA_BYTES+HEADER_SIZE,0,in_addr,addr_len);
-    if(ret == -1){
-        printf("error in recvfrom\n");
-    }
-    if(ret < HEADER_SIZE){
-        printf("message too short\n");
-        return -1;
-    }else if(ret > buf->header.data_size + HEADER_SIZE){
-        printf("message too long to be stored in buf\n");
-        return -1;
-    }
-
-    memcpy(buf,temp_buf,ret);
-    uint32_t crc = calculate_32crc(CRC_DIVISOR,buf->data,buf->header.data_size);
-    if(crc != buf->header.crc){
-        printf("crc does not match\n");
-        ret = -1;
-    }
+    ret = recvfrom(socketfd,buf,buf_size,0,in_addr,addr_len);
     return ret;
 }
 
