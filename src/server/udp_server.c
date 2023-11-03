@@ -28,21 +28,22 @@ static void* async_receive_message(void* args){
 
 int init_server(struct StopAndWaitMessage* recv, 
     struct StopAndWaitMessage* ack, 
-    int* socket, 
-    struct sockaddr_in* client_addr, 
-    socklen_t* addr_size, 
+    int socket, 
+    struct sockaddr* client_addr, 
+    socklen_t addr_size, 
     FILE* fp){
-    int ret = msg_receive_message(socket, &recv, (struct sockaddr*)&client_addr, addr_size);
+    int ret = msg_receive_message(socket, recv, client_addr, addr_size);
 
     while(ret == -1){
         // Get one correct message
-        msg_send_message(socket, ack, (struct sockaddr*)&client_addr);
+        msg_send_message(socket, ack, client_addr);
         ret = msg_receive_message(socket, recv, client_addr, addr_size);
     }
     
     ack->header.ack = !recv->header.seq_num;
     fwrite(recv->data,1,recv->header.data_size,fp);
     msg_send_message(socket,ack,client_addr);
+    return ret;
 }
 
 int main(int argc, char* argv[]){
@@ -62,7 +63,7 @@ int main(int argc, char* argv[]){
     FILE* fp = utils_open_file(argv[1],"a");
     socklen_t addr_size = sizeof(client_addr);
 
-    init_server(&recv,&ack,&socket,&client_addr,&addr_size,fp);
+    init_server(&recv,&ack,socket,(struct sockaddr*) &client_addr,addr_size,fp);
     bool prev_seq_num = recv.header.seq_num;
 
     struct timeval rx_start, now; // Used to close connection after long period of inactivity

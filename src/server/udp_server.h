@@ -23,13 +23,11 @@ typedef struct{
     struct sockaddr* src_addr;
     socklen_t addr_len;
 } rx_args;
-
-int init_server(struct StopAndWaitMessage* recv,
+int init_server(struct StopAndWaitMessage* recv, 
     struct StopAndWaitMessage* ack, 
-    int* socket, 
-    struct sockaddr_in* client_addr, 
-    socklen_t* addr_size, 
+    int socket, 
+    struct sockaddr* client_addr, 
+    socklen_t addr_size, 
     FILE* fp);
-
 static void clean_thread(void* args);
 #endif
