@@ -15,9 +15,9 @@ static void* async_receive_message(void* args){
     *ret = msg_receive_message(arg->socket,arg->recv,arg->src_addr,arg->addr_len);
     if(utils_rand_bool(LOST_PROB)){
         printf("Simulating lost message\n");
-        while(1){
-            //Block
-        }
+        sleep((int)(TIMEOUT/1E6)+1);
+        //sleep is a cancellation point, so 
+        //pthread_cancel will be able to cancel the thread
     }
     pthread_mutex_lock(&mux1);
     finished = true;
@@ -32,7 +32,6 @@ int main(int argc,char* argv[]){
     struct sockaddr_in server_addr;
     struct StopAndWaitMessage send;
     struct StopAndWaitMessage ack;    
-    pthread_t rx_tread;
 
     ack.data = (uint8_t*) malloc(ACKSIZE);
     memset(ack.data,0,ACKSIZE);
@@ -42,19 +41,21 @@ int main(int argc,char* argv[]){
     udp_get_sockaddr(AF_INET,argv[1],UDP_SERVER_PORT,&server_addr);
     FILE* fp = utils_open_file(argv[2],"r");
     uint8_t* buf =(uint8_t*) malloc(MSG_MAX_DATA_SIZE);
-
+    uint8_t* message_buf =(uint8_t*) malloc(MSG_MAX_SIZE);
     int read_bytes=0;
     unsigned long long total_bytes=0;
     struct timeval send_start, send_end;
     gettimeofday(&send_start, NULL);
     while((read_bytes=fread(buf,1,MSG_MAX_DATA_SIZE,fp))>0){
         total_bytes += read_bytes;
-
-        int crc = utils_calculate_32crc(CRC_DIVISOR,buf,read_bytes);
+        *message_buf = *buf;
+        int crc = utils_calculate_32crc(CRC_DIVISOR,message_buf,read_bytes);
         struct StopAndWaitHeader header = msg_create_header(!send.header.seq_num,0,read_bytes,crc);
-        send = msg_create_message(header,buf);
+        send = msg_create_message(header,message_buf);
 
         while(ack.header.ack == send.header.seq_num){
+            pthread_t rx_tread;
+            *message_buf = *buf; // Clear any errors
             void* thread_res;
             struct timeval p_start, now;
             struct StopAndWaitMessage temp;
@@ -69,9 +70,9 @@ int main(int argc,char* argv[]){
                 .addr_len = sizeof(server_addr.sin_addr)
             };
 
-            // Simulate lost message
-            if((float)rand()/(float)RAND_MAX<BITFLIP_PROB){
-                printf("Simulating error\n");
+            // Simulate error in message
+            if(utils_rand_bool(BITFLIP_PROB)){
+                //printf("Simulating error\n");
                 send.data[0] ^= 0b00000001; // Simulate single bit flip error 
             }
 
@@ -107,6 +108,7 @@ int main(int argc,char* argv[]){
             if(timed_out){
                 printf("Timed out, resending\n");
                 pthread_cancel(rx_tread);
+                printf("Cancelled thread\n");
                 pthread_mutex_unlock(&mux1);
                 continue;
             }
@@ -115,7 +117,7 @@ int main(int argc,char* argv[]){
             free(thread_res);
 
             if(ret == -1){
-                printf("msg_receive_message detected an error, resending\n");
+               // printf("msg_receive_message detected an error, resending\n");
             }else{
                 // Correctly received ack. Store and continue
                 ack.header = temp.header;
@@ -124,6 +126,7 @@ int main(int argc,char* argv[]){
         }
     }
     free(buf);
+    free(message_buf);
     free(ack.data);
     fclose(fp);
     gettimeofday(&send_end, NULL);
