@@ -61,7 +61,7 @@ int main(int argc, char* argv[]){
     bool prev_seq_num = recv.header.seq_num;
 
     struct timeval rx_start, now; // Used to close connection after long period of inactivity
-    unsigned long long int recevied_bytes = 0;
+    unsigned long long int recevied_bytes = recv.header.data_size;
     while(true){
         dummy_data = 0;
         rx_args args = {
