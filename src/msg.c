@@ -47,7 +47,7 @@ int msg_send_message(int socket, struct StopAndWaitMessage* msg, struct sockaddr
     memcmp(&buf,&(msg->header),MSG_HEADER_SIZE); // copy message to buf, same as memcpy but with
     memcmp(&buf[MSG_HEADER_SIZE],msg->data,msg->header.data_size); // same as above
     int ret; 
-    ret = sendto(socket,buf,msg->header.data_size+MSG_HEADER_SIZE,0,address,sizeof(*address));
+    ret = udp_tx(buf, MSG_HEADER_SIZE + msg->header.data_size, socket, address, sizeof(*address));
     return ret;
 }
 int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct sockaddr* src_addr, const socklen_t* addr_size){
@@ -64,8 +64,8 @@ int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct so
     * @return the number of bytes received, or -1 if an error occured
     */
     uint8_t buf[MSG_MAX_SIZE];
-    int ret = 0;
-    ret = udp_receive(buf,MSG_MAX_SIZE,sock,src_addr,addr_size);
+    int ret;
+    ret = udp_rx(buf,MSG_MAX_SIZE,sock,src_addr,addr_size);
     if (ret == -1){
         printf("error in udp_receive\n");
         return -1;
@@ -79,5 +79,5 @@ int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct so
     }
     memcpy(&(recv->header),&buf,MSG_HEADER_SIZE);
     memcpy(recv->data,&buf[MSG_HEADER_SIZE],recv->header.data_size);
-    return ret;
+
 }
