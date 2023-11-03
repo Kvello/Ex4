@@ -10,3 +10,12 @@ bool is_little_edian(){
         return false;
     }
 }
+
+FILE* open_file(char* file_name){
+    FILE *fp;
+    if((fp = fopen(file_name,"r"))==NULL){
+        printf("error in open file");
+        exit(1);
+    }
+    return fp;
+}
