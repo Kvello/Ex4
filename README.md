@@ -16,6 +16,6 @@ macros and can be adjusted in udp.h, msg.h
 The server is unable to initialize new connections, this means it need to be restarted after a 
 transmission is over. The current implementation timeouts the server after 5s without new messages
 
-## Furter work
+## Further work
 See known bugs.
 Also ipv6 support should be fairly straigth forward to implement.
