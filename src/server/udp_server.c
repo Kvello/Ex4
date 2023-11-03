@@ -43,7 +43,7 @@ int main(int argc, char* argv[]){
             ack.header.ack = !recv.header.seq_num;
             printf("Correctly received %d bytes of data\n",recv.header.data_size);
             fwrite(recv.data,1,recv.header.data_size,fp);
+            msg_send_message(socket,&ack,(struct sockaddr*)&client_addr);
         }
-        msg_send_message(socket,&ack,(struct sockaddr*)&client_addr);
     }
 }
