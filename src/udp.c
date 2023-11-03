@@ -1,6 +1,6 @@
 #include "udp.h"
 
-int udp_tx(void* data, int data_size, int sockfd, const void* out_addr, socklen_t* addr_len){
+int udp_tx(void* data, int data_size, int sockfd, struct sockaddr* const out_addr, socklen_t addr_len){
     /*
     * Sends the data in data over UDP with the file descriptor sockfd as one message.
     * Supports both IPv4 and IPv6.
@@ -18,7 +18,7 @@ int udp_tx(void* data, int data_size, int sockfd, const void* out_addr, socklen_
     printf("sent %d bytes\n", ret);
     return ret;
 }
-int udp_rx(void* buf, int buf_size, const int socketfd, const void* in_addr, const socklen_t* addr_len){
+int udp_rx(void* buf, int buf_size, const int socketfd, struct sockaddr* const in_addr, socklen_t addr_len){
     /*
     * Receives a message over UDP from the address in_address with the file descriptor sockfd.
     * Supports both IPv4 and IPv6. The received message is stored in buf.
@@ -31,7 +31,7 @@ int udp_rx(void* buf, int buf_size, const int socketfd, const void* in_addr, con
     * @return the number of bytes received, or -1 if an error occured
     */
     int ret;
-    ret = recvfrom(socketfd,buf,buf_size,0,in_addr,addr_len);
+    ret = recvfrom(socketfd,buf,buf_size,0,in_addr,&addr_len);
     return ret;
 }
 
@@ -61,7 +61,7 @@ int udp_get_sock(int protocol_family, int port, void* sock_addr){
         memset(&my_addr, 0, sizeof(my_addr));
         my_addr.sin_family = AF_INET;
         my_addr.sin_port = htons(port);
-        my_addr.sin_addr.s_addr = *(uint32_t*)sock_addr;
+        my_addr.sin_addr.s_addr = INADDR_ANY;
         ret = bind(sockfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr_in));
     }else{
         printf("protocol family %c not supported\n", protocol_family);
