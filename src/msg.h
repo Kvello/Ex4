@@ -36,11 +36,11 @@ struct StopAndWaitMessage
         data:       the data of the message
     */
     struct StopAndWaitHeader header;
-    u_int8_t *data;
+    uint8_t* data;
 };
 struct StopAndWaitHeader msg_create_header(bool seq_num, bool ack, u_int16_t data_size, u_int32_t crc);
 struct StopAndWaitMessage msg_create_message(struct StopAndWaitHeader header, u_int8_t *data);
 int msg_send_message(int socket, struct StopAndWaitMessage*message, struct sockaddr *address);
-int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct sockaddr* src_addr,socklen_t* const addr_size);
+int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct sockaddr* src_addr,socklen_t addr_size);
 uint32_t msg_calculate_32crc_little_edian(uint64_t crc, struct StopAndWaitMessage message);
 #endif
