@@ -11,7 +11,7 @@ bool utils_is_little_edian(){
     }
 }
 
-FILE* utils_open_file(char* file_name, char mode){
+FILE* utils_open_file(char* file_name, const char* mode){
     FILE *fp;
     if((fp = fopen(file_name,mode))==NULL){
         printf("error in open file");
@@ -27,11 +27,10 @@ uint32_t utils_calculate_32crc(uint64_t crc_divisor, const uint8_t *data, int da
         The calculated crc should be sent in the message, and simply checked by the receiver.
         This funciton does thus not neccessarly return 0 if the crc is correct.
     */
-    bool little_edian = is_little_edian();
+    bool little_edian = utils_is_little_edian();
     uint8_t remainder[data_size];
     memcpy(&remainder, data, data_size); // copy data for modification
-    int MSB_pos = findMSBPosition(remainder, data_size, little_edian);
-    // printf("MSB_pos: %d\n", MSB_pos);
+    int MSB_pos = utils_findMSBPosition(remainder, data_size, little_edian);
     while (MSB_pos >= NUM_BITS_CRC_DIVISOR - 1)
     {
         int start_byte = data_size - 1 - (MSB_pos / 8);
@@ -55,11 +54,11 @@ uint32_t utils_calculate_32crc(uint64_t crc_divisor, const uint8_t *data, int da
     uint32_t remainder_int = 0;
     if (little_edian)
     {
-        memcpy(&remainder_int, &remainder, 4);
+        memcpy(&remainder_int, &remainder, data_size<4?data_size:4);
     }
     else
     {
-        memcpy(&remainder_int, &remainder[data_size - 4], 4);
+        memcpy(&remainder_int, &remainder[data_size - 4], data_size<4?data_size:4);
     }
     return remainder_int;
 }
