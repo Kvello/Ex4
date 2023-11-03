@@ -15,7 +15,7 @@ int udp_tx(void* data, int data_size, int sockfd, struct sockaddr* const out_add
     */
     int ret; 
     ret = sendto(sockfd,data,data_size,0,out_addr,addr_len);
-    printf("sent %d bytes\n", ret);
+    // printf("sent %d bytes\n", ret);
     return ret;
 }
 int udp_rx(void* buf, int buf_size, const int socketfd, struct sockaddr* const in_addr, socklen_t addr_len){

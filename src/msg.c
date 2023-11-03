@@ -81,7 +81,7 @@ int msg_receive_message(const int sock,struct StopAndWaitMessage* recv,struct so
     memcpy(&(recv->header),&buf,MSG_HEADER_SIZE);
     memcpy(recv->data,&buf[MSG_HEADER_SIZE],recv->header.data_size);
     if(utils_calculate_32crc(CRC_DIVISOR,recv->data,recv->header.data_size) != recv->header.crc){
-        printf("crc error\n");
+        // printf("crc error\n");
         return -1;
     }
     return ret;
