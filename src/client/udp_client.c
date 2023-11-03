@@ -107,7 +107,6 @@ int main(int argc,char* argv[]){
                 ack_message.data = temp.data;
             }
         }
-
     }
     gettimeofday(&send_end, NULL);
     double time = utils_time_diff(&send_start,&send_end);
