@@ -5,6 +5,7 @@
 #include <math.h>
 #define CRC_DIVISOR 0b100000100110000010001110110110111
 #define NUM_BYTES_CRC_DIVISOR 5
+#define HEADER_SIZE sizeof(struct StopAndWaitHeader)
 #define NUM_BITS_CRC_DIVISOR 33
 // #define CRC_DIVISOR 0x104C11DB7 // CRC-32 polynomial
 struct StopAndWaitHeader
