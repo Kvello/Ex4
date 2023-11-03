@@ -1,13 +1,12 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
+#ifndef MSG_H
+#define MSG_H
 #include "common.h"
 #include "utils.h"
+#include "udp.h"
 #include <math.h>
-#define CRC_DIVISOR 0b100000100110000010001110110110111
-#define NUM_BYTES_CRC_DIVISOR 5
-#define MESSAGE_HEADER_SIZE sizeof(struct StopAndWaitHeader)
-#define MESSAGE_MAX_DATA_SIZE 1024
-#define NUM_BITS_CRC_DIVISOR 33
+#define MSG_HEADER_SIZE sizeof(struct StopAndWaitHeader)
+#define MSG_MAX_DATA_SIZE 1024
+#define MSG_MAX_SIZE MSG_HEADER_SIZE + MSG_MAX_DATA_SIZE
 // #define CRC_DIVISOR 0x104C11DB7 // CRC-32 polynomial
 struct StopAndWaitHeader
 {
@@ -39,9 +38,9 @@ struct StopAndWaitMessage
     struct StopAndWaitHeader header;
     u_int8_t *data;
 };
-struct StopAndWaitHeader create_header(bool seq_num, bool ack, u_int16_t data_size, u_int32_t crc);
-struct StopAndWaitMessage create_message(struct StopAndWaitHeader header, u_int8_t *data);
-int findMSBPosition(uint8_t *x, int length, bool little_edian);
-uint32_t calculate_32crc_little_edian(uint64_t crc, struct StopAndWaitMessage message);
-uint32_t calculate_32crc(uint64_t crc_divisor, const uint8_t *data, int data_size);
+struct StopAndWaitHeader msg_create_header(bool seq_num, bool ack, u_int16_t data_size, u_int32_t crc);
+struct StopAndWaitMessage msg_create_message(struct StopAndWaitHeader header, u_int8_t *data);
+int msg_send_message(int socket, struct StopAndWaitMessage*message, struct sockaddr *address);
+int msg_receive_message(int sock,struct StopAndWaitMesage* recv,struct sockaddr src_addr,int addr_size);
+uint32_t msg_calculate_32crc_little_edian(uint64_t crc, struct StopAndWaitMessage message);
 #endif
