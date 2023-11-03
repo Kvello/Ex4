@@ -13,12 +13,6 @@ static void* async_receive_message(void* args){
     int* ret = (int*) malloc(sizeof(int));
     pthread_cleanup_push(clean_thread, ret);
     *ret = msg_receive_message(arg->socket,arg->recv,arg->src_addr,arg->addr_len);
-    if(utils_rand_bool(LOST_PROB)){
-        printf("Simulating lost message\n");
-        while(1){
-            //Block
-        }
-    }
     pthread_mutex_lock(&mux1);
     finished = true;
     pthread_mutex_unlock(&mux1);
@@ -67,6 +61,7 @@ int main(int argc, char* argv[]){
     bool prev_seq_num = recv.header.seq_num;
 
     struct timeval rx_start, now; // Used to close connection after long period of inactivity
+    unsigned long long int recevied_bytes = 0;
     while(true){
         dummy_data = 0;
         rx_args args = {
@@ -82,12 +77,14 @@ int main(int argc, char* argv[]){
         gettimeofday(&now, NULL);
         bool timed_out = true;
         // Start timed connection
+        gettimeofday(&now, NULL);
         while(utils_time_diff(&rx_start,&now) < CONNECTION_CLOSE_TIMEOUT){
             pthread_mutex_lock(&mux1);
             if(finished){
                 pthread_mutex_unlock(&mux1);
                 pthread_join(rx_tread,&thread_res);
                 finished = false;
+                timed_out = false;
                 break;
             }
             pthread_mutex_unlock(&mux1);
@@ -105,22 +102,26 @@ int main(int argc, char* argv[]){
         ret = *(int*)thread_res;
         free(thread_res);
 
-        if ((float)rand()/(float)RAND_MAX < LOST_PROB){
+        if ((utils_rand_bool(LOST_PROB))){
             printf("Simulating lost message\n");
             continue;
         }
-            if ( (float)rand()/(float)RAND_MAX < BITFLIP_PROB){
-                printf("Simulating error\n");
-                ack.data[0] ^= 0b00000001; // Simulate single bit flip error 
-            }
-            if(ret != -1 && prev_seq_num != recv.header.seq_num){
-                // accept the message, and ack it
-                prev_seq_num = recv.header.seq_num;
-                ack.header.seq_num = !ack.header.seq_num;
-                ack.header.ack = !recv.header.seq_num;
-                printf("Correctly received %d bytes of data\n",recv.header.data_size);
-                fwrite(recv.data,1,recv.header.data_size,fp);
-            }
-            msg_send_message(socket,&ack,(struct sockaddr*)&client_addr);
+        if (utils_rand_bool(BITFLIP_PROB)){
+            printf("Simulating error\n");
+            ack.data[0] ^= 0b00000001; // Simulate single bit flip error 
+        }
+        if(ret != -1 && prev_seq_num != recv.header.seq_num){
+            // accept the message, and ack it
+            prev_seq_num = recv.header.seq_num;
+            ack.header.seq_num = !ack.header.seq_num;
+            ack.header.ack = !recv.header.seq_num;
+            recevied_bytes += recv.header.data_size;
+            printf("Correctly received %d bytes of data\n",recv.header.data_size);
+            fwrite(recv.data,1,recv.header.data_size,fp);
+        }
+        msg_send_message(socket,&ack,(struct sockaddr*)&client_addr);
     }
+    fclose(fp);
+    printf("Received %llu bytes of data\n",recevied_bytes);
+    return 0;
 }
