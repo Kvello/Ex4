@@ -50,7 +50,6 @@ int main(int argc,char* argv[]){
     gettimeofday(&send_start, NULL);
     while((read_bytes=fread(buf,1,MSG_MAX_DATA_SIZE,fp))>0){
         total_bytes += read_bytes;
-        printf("Sending %s\n",buf);
         int crc = utils_calculate_32crc(CRC_DIVISOR,buf,read_bytes);
         struct StopAndWaitHeader header = msg_create_header(!out_message.header.seq_num,0,read_bytes,crc);
         out_message = msg_create_message(header,buf);
@@ -108,8 +107,6 @@ int main(int argc,char* argv[]){
                 ack_message.data = temp.data;
             }
         }
-        exit(1);
-
     }
     gettimeofday(&send_end, NULL);
     double time = utils_time_diff(&send_start,&send_end);
