@@ -14,7 +14,7 @@ COMMON_OBJ := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(COMMON_SRC))
 TEST_OBJ := $(patsubst $(SRC_DIR)/tests/%.c, $(BUILD_DIR)/%.o, $(TEST_SRC))
 # Compiler options
 CC := g++
-CFLAGS := -Wall -O2
+CFLAGS := -Wall -O2 -pthread
 DBGFLAGS := -g
 
 # Output executable
@@ -24,16 +24,20 @@ TEST := $(BUILD_DIR)/tests
 DEBUG := $(BUILD_DIR)/debug
 
 # Object file compilation rule
-$(BUILD_DIR)/%.o: $(SRC_DIR)/**/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(DBGFLAGS) -c -o $@ $<
 
+$(BUILD_DIR)/%.o: $(SRC_DIR)/*/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(DBGFLAGS) -c -o $@ $<
 # Create the build directory
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 # Debugging target
-$(DEBUG): $(TEST_OBJ) $(COMMON_OBJ)
+$(DEBUG): $(SERVER_OBJ) $(CLIENT_OBJ) $(TEST_OBJ) $(COMMON_OBJ)
 	$(CC) $(CFLAGS) $(DBGFLAGS) -o $(DEBUG) $(TEST_OBJ) $(COMMON_OBJ)
+	$(CC) $(CFLAGS) $(DBGFLAGS) -o $(CLIENT) $(CLIENT_OBJ) $(COMMON_OBJ)
+	$(CC) $(CFLAGS) $(DBGFLAGS) -o $(SERVER) $(SERVER_OBJ) $(COMMON_OBJ)
 
 # Clean rule
 .PHONY: clean
@@ -58,3 +62,5 @@ all: client server
 .PHONY: print
 print:
 	@echo $(COMMON_SRC)
+	@echo $(SERVER_OBJ)
+	@echo $(CLIENT_OBJ)
